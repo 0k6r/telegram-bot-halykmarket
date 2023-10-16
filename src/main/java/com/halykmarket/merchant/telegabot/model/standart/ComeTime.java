@@ -1,11 +1,11 @@
 package com.halykmarket.merchant.telegabot.model.standart;
 
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 

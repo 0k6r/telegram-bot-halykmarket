@@ -12,48 +12,54 @@ import java.util.Set;
 
 public class SetDeleteMessages {
 
-    private static Map<Long, Set<Integer>> messagesWithKeyboardIds = new HashMap<>();
-    private static Map<Long, Set<Integer>> messagesIds             = new HashMap<>();
+    private static final Map<Long, Set<Integer>> messagesWithKeyboardIds = new HashMap<>();
+    private static final Map<Long, Set<Integer>> messagesIds = new HashMap<>();
 
-    public  static void deleteKeyboard(long chatId, DefaultAbsSender bot) {
+    public static void deleteKeyboard(long chatId, DefaultAbsSender bot) {
         try {
             if (messagesWithKeyboardIds.get(chatId) != null) {
-                for (Integer integer : messagesWithKeyboardIds.get(chatId)) {
+                for (var id : messagesWithKeyboardIds.get(chatId)) {
                     try {
-                        EditMessageReplyMarkup emrm = new EditMessageReplyMarkup();
+                        var emrm = new EditMessageReplyMarkup();
                         emrm.setChatId(String.valueOf(chatId));
-                        emrm.setMessageId(integer);
+                        emrm.setMessageId(id);
                         emrm.setReplyMarkup(null);
                         bot.execute(emrm);
-                    } catch (TelegramApiException e){}
+                    } catch (TelegramApiException ignored) {
+                    }
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception ignored) {
+        }
         messagesWithKeyboardIds.put(chatId, new HashSet<>());
     }
 
-    public  static void deleteMessage(long chatId, DefaultAbsSender bot) {
+    public static void deleteMessage(long chatId, DefaultAbsSender bot) {
         try {
             if (messagesIds.get(chatId) != null) {
-                for (Integer integer : messagesIds.get(chatId)) {
+                for (var id : messagesIds.get(chatId)) {
                     try {
-                        bot.execute(new DeleteMessage(String.valueOf(chatId), integer));
-                    } catch (TelegramApiException e) {}
+                        bot.execute(new DeleteMessage(String.valueOf(chatId), id));
+                    } catch (TelegramApiException ignored) {
+                    }
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception ignored) {
+        }
         messagesWithKeyboardIds.put(chatId, new HashSet<>());
     }
 
-    public  static void addKeyboard(long chatId, int messageId) { add(messagesWithKeyboardIds, chatId, messageId); }
+    public static void addKeyboard(long chatId, int messageId) {
+        add(chatId, messageId);
+    }
 
-    private static void add(Map<Long, Set<Integer>> map, long chatId, int messageId) {
-        if (map.get(chatId) == null) {
-            Set<Integer> set = new HashSet<>();
+    private static void add(long chatId, int messageId) {
+        if (messagesWithKeyboardIds.get(chatId) == null) {
+            var set = new HashSet<Integer>();
             set.add(messageId);
-            map.put(chatId, set);
+            messagesWithKeyboardIds.put(chatId, set);
         } else {
-            map.get(chatId).add(messageId);
+            messagesWithKeyboardIds.get(chatId).add(messageId);
         }
     }
 }

@@ -1,10 +1,9 @@
 package com.halykmarket.merchant.telegabot.repository;
 
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
 import com.halykmarket.merchant.telegabot.model.standart.Properties;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PropertiesRepo extends CrudRepository<Properties, Integer> {
-Properties findFirstById(int id);
+public interface PropertiesRepo extends JpaRepository<Properties, Integer> {
 }

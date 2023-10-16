@@ -8,18 +8,18 @@ import java.util.*;
 
 public class DateKeyboard {
 
-    private static SimpleDateFormat formatCallBack  = new SimpleDateFormat("dd.MM.yyyy");
-    private static SimpleDateFormat formatYear      = new SimpleDateFormat("yyyy");
-    private static SimpleDateFormat formatMonth     = new SimpleDateFormat("MMMMM");
-    private        Calendar         startDay        = Calendar.getInstance(new Locale("en", "UK"));
-    private        String           buttonBackMonth = "◄";
-    private        String           buttonNextMonth = "►";
-    private        String           buttonBackYear  = "◄◄";
-    private        String           buttonNextYear  = "►►";
-    private        String           emptyValue      = "-";
+    private static final SimpleDateFormat formatCallBack = new SimpleDateFormat("dd.MM.yyyy");
+    private static final SimpleDateFormat formatYear = new SimpleDateFormat("yyyy");
+    private static final SimpleDateFormat formatMonth = new SimpleDateFormat("MMMMM");
+    private final Calendar startDay = Calendar.getInstance(new Locale("en", "UK"));
+    private final String buttonBackMonth = "◄";
+    private final String buttonNextMonth = "►";
+    private final String buttonBackYear = "◄◄";
+    private final String buttonNextYear = "►►";
+    private final String emptyValue = "-";
 
 
-    public  boolean                 isNext(String updateText) {
+    public boolean isNext(String updateText) {
         if (updateText.equals(buttonNextMonth)) {
             startDay.add(Calendar.MONTH, 1);
             return true;
@@ -36,64 +36,65 @@ public class DateKeyboard {
             startDay.add(Calendar.YEAR, -1);
             return true;
         }
-        if (updateText.equals(emptyValue) || updateText.equals(formatYear.format(startDay.getTime())) || updateText.equals(formatMonth.format(startDay.getTime()))) return true;
-        return false;
+        return updateText.equals(emptyValue) ||
+                updateText.equals(formatYear.format(startDay.getTime())) ||
+                updateText.equals(formatMonth.format(startDay.getTime()));
     }
 
-    public  String                  getDate(String updateText) {
+    public String getDate(String updateText) {
         try {
             if (updateText.length() > 2) return null;
             int day = Integer.parseInt(updateText);
             startDay.set(Calendar.DAY_OF_MONTH, day);
             return formatCallBack.format(startDay.getTime());
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException ignore) {
             return null;
         }
     }
 
-    public  Calendar                getDate() { return startDay; }
-
-    public  Calendar                getCalendarDate(String updateText) {
+    public Calendar getCalendarDate(String updateText) {
         if (getDate(updateText) == null) return null;
-        return startDay;
+        return this.startDay;
     }
 
-    public  Date                    getDateDate(String updateText) { return getCalendarDate(updateText).getTime(); }
+    public Date getDateDate(String updateText) {
+        return this.getCalendarDate(updateText).getTime();
+    }
 
-    public  InlineKeyboardMarkup    getCalendarKeyboard() {
-        SimpleDateFormat simpleDateFormat   = new SimpleDateFormat("dd");
-        ArrayList<String> listButtons       = new ArrayList<>();
+    public InlineKeyboardMarkup getCalendarKeyboard() {
+        var simpleDateFormat = new SimpleDateFormat("dd");
+        ArrayList<String> listButtons = new ArrayList<>();
         startDay.set(Calendar.DAY_OF_MONTH, 1);
-        int currentMonth                    = startDay.get(Calendar.MONTH);
+        int currentMonth = startDay.get(Calendar.MONTH);
         listButtons.add(buttonBackYear + "," + formatYear.format(startDay.getTime()) + "," + buttonNextYear);
         listButtons.add(buttonBackMonth + "," + formatMonth.format(startDay.getTime()) + "," + buttonNextMonth);
         for (int i = 0; i < 5; i++) {
-            String row = "";
+            StringBuilder row = new StringBuilder();
             for (int t = 0; t < 7; t++) {
                 if (startDay.get(Calendar.MONTH) != currentMonth) {
-                    row += emptyValue + ",";
+                    row.append(emptyValue).append(",");
                     continue;
                 }
-                row += (simpleDateFormat.format(startDay.getTime())) + ",";
+                row.append(simpleDateFormat.format(startDay.getTime())).append(",");
                 startDay.add(Calendar.DATE, 1);
             }
-            listButtons.add(row);
+            listButtons.add(row.toString());
             if (startDay.get(Calendar.MONTH) != currentMonth) break;
         }
         startDay.add(Calendar.MONTH, -1);
-        return getInlineKeyboard(listButtons.toArray(new String[listButtons.size()]));
+        return this.getInlineKeyboard(listButtons.toArray(new String[0]));
     }
 
-    private InlineKeyboardMarkup    getInlineKeyboard(String[] namesButton) {
-        InlineKeyboardMarkup keyboard                   = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsKeyboard   = new ArrayList<>();
+    private InlineKeyboardMarkup getInlineKeyboard(String[] namesButton) {
+        var keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsKeyboard = new ArrayList<>();
         String buttonIdsString;
-        for (int i = 0; i < namesButton.length; i++) {
-            buttonIdsString                         = namesButton[i];
-            List<InlineKeyboardButton> rowButton    = new ArrayList<>();
-            String[] buttonIds = buttonIdsString.split(",");
+        for (String s : namesButton) {
+            buttonIdsString = s;
+            var rowButton = new ArrayList<InlineKeyboardButton>();
+            var buttonIds = buttonIdsString.split(",");
             for (String buttonId : buttonIds) {
-                InlineKeyboardButton button = new InlineKeyboardButton();
+                var button = new InlineKeyboardButton();
                 button.setText(buttonId);
                 button.setCallbackData(buttonId);
                 rowButton.add(button);
@@ -102,40 +103,5 @@ public class DateKeyboard {
         }
         keyboard.setKeyboard(rowsKeyboard);
         return keyboard;
-    }
-
-    public  InlineKeyboardMarkup    getWeekCalendarKeyboard() {
-        SimpleDateFormat simpleDateFormat   = new SimpleDateFormat("dd");
-        ArrayList<String> listButtons       = new ArrayList<>();
-        startDay.set(Calendar.DAY_OF_MONTH, 1);
-        int currMonth                       = startDay.get(Calendar.MONTH);
-        listButtons.add(buttonBackYear + "," + formatYear.format(startDay.getTime()) + "," + buttonNextYear);
-        listButtons.add(buttonBackMonth + "," + formatMonth.format(startDay.getTime()) + "," + buttonNextMonth);
-        boolean isDayFinned                 = false;
-        for (int i = 0; i < 6; i++) {
-            String row = "";
-            for (int t = 0; t < 7; t++) {
-                if (startDay.get(Calendar.MONTH) != currMonth) {
-                    row += emptyValue + ",";
-                    continue;
-                }
-                if (!isDayFinned) {
-                    int dayOfWeek = startDay.get(Calendar.DAY_OF_WEEK) - 1;
-                    if (dayOfWeek == 0) dayOfWeek = 7;
-                    if (dayOfWeek != (t + 1)) {
-                        row += emptyValue + ",";
-                        continue;
-                    } else {
-                        isDayFinned = true;
-                    }
-                }
-                row += (simpleDateFormat.format(startDay.getTime())) + ",";
-                startDay.add(Calendar.DATE, 1);
-            }
-            listButtons.add(row);
-            if (startDay.get(Calendar.MONTH) != currMonth) break;
-        }
-        startDay.add(Calendar.MONTH, -1);
-        return getInlineKeyboard(listButtons.toArray(new String[listButtons.size()]));
     }
 }

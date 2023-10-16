@@ -1,11 +1,12 @@
 package com.halykmarket.merchant.telegabot.command.impl;
 
-import com.halykmarket.merchant.telegabot.model.standart.Admin;
-import lombok.extern.slf4j.Slf4j;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import com.halykmarket.merchant.telegabot.command.Command;
+import com.halykmarket.merchant.telegabot.exceptions.UserNotFoundException;
+import com.halykmarket.merchant.telegabot.model.standart.Admin;
 import com.halykmarket.merchant.telegabot.model.standart.User;
 import com.halykmarket.merchant.telegabot.util.Const;
+import lombok.extern.slf4j.Slf4j;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -64,11 +65,13 @@ public class id006_EditAdmin extends Command {
 
     private void getText(boolean withLink) throws SQLException {
         text = new StringBuilder();
-        allAdmins = adminRepo.findAll();
+        allAdmins = (List<Admin>) adminRepo.findAll();
         int count = 0;
         for (Admin admin : allAdmins) {
             try {
-                User user = usersRepo.getByChatId(admin.getChatId());
+                User user = usersRepo.findFirstByChatId(admin.getChatId())
+                        .orElseThrow(() -> new UserNotFoundException("User with chatId: " + admin.getChatId() +
+                                " not found"));
                 //User user = usersDao.getUserById(admin);
                 if (allAdmins.size() == 1) {
                     if (withLink) {

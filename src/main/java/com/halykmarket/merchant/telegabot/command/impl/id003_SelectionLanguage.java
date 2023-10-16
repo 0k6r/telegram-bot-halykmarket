@@ -17,7 +17,7 @@ public class id003_SelectionLanguage extends Command {
     }
 
     private void chosenLanguage() {
-        if (isButton(Const.RU_LANGUAGE)) LanguageService.setLanguage(chatId, Language.RU);
-        if (isButton(Const.KZ_LANGUAGE)) LanguageService.setLanguage(chatId, Language.KZ);
+        if (isButton(Const.RU_LANGUAGE)) super.languageService.setLanguage(chatId, Language.RU);
+        if (isButton(Const.KZ_LANGUAGE)) super.languageService.setLanguage(chatId, Language.KZ);
     }
 }

@@ -2,12 +2,13 @@ package com.halykmarket.merchant.telegabot.util;
 
 import com.halykmarket.merchant.telegabot.enums.Language;
 import com.halykmarket.merchant.telegabot.enums.ParseMode;
-import com.halykmarket.merchant.telegabot.model.standart.Message;
+import com.halykmarket.merchant.telegabot.exceptions.MessageNotFoundException;
 import com.halykmarket.merchant.telegabot.repository.MessageRepo;
-import com.halykmarket.merchant.telegabot.repository.TelegramBotRepositoryProvider;
 import com.halykmarket.merchant.telegabot.service.KeyboardMarkUpService;
 import com.halykmarket.merchant.telegabot.service.LanguageService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.meta.api.methods.send.SendContact;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -24,19 +25,16 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import java.util.Objects;
 
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class BotUtil {
-
-    private DefaultAbsSender bot;
-    private MessageRepo messageRepo = TelegramBotRepositoryProvider.getMessageRepo();
+    private final LanguageService languageService;
+    private final KeyboardMarkUpService keyboardMarkUpService;
+    private final MessageRepo messageRepo;
+    private final DefaultAbsSender bot;
     private long chatId;
-    private KeyboardMarkUpService keyboardMarkUpService;
-//    private static DaoFactory       factory = DaoFactory.getInstance();
 
-    public BotUtil(DefaultAbsSender bot) {
-        this.bot = bot;
-    }
-
-    public void editMessage(String text, long chatId, int messageId) throws TelegramApiException {
+    public void editMessage(String text, long chatId, int messageId) {
         EditMessageText new_message = EditMessageText.builder()
                 .chatId(String.valueOf(chatId))
                 .messageId(messageId)
@@ -83,21 +81,21 @@ public class BotUtil {
     public int sendMessage(long messageId, long chatId, Contact contact, String photo) throws TelegramApiException {
         int result = 0;
         this.chatId = chatId;
-//        Message message                     = factory.getMessageDao().getMessage(messageId);
-        Message message = messageRepo.findByIdAndLanguageId((int) messageId, getLanguage().getId());
-        SendMessage sendMessage = new SendMessage();
+        var message = messageRepo.findByIdAndLanguageId((int) messageId, getLanguage().getId())
+                .orElseThrow(() -> new MessageNotFoundException("Message with id: " + messageId +
+                        " and languageId: " + getLanguage().getId() + " not found"));
+        var sendMessage = new SendMessage();
         sendMessage.setText(message.getName());
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setParseMode(ParseMode.HTML.name());
-        keyboardMarkUpService = new KeyboardMarkUpService();
-//        KeyboardMarkUpDao keyboardMarkUpDao = factory.getKeyboardMarkUpDao();
-//        if (keyboardMarkUp.select())
-        if (message.getKeyboardId() != null) {
-            if (keyboardMarkUpService.select(message.getKeyboardId()) != null)
-                sendMessage.setReplyMarkup(keyboardMarkUpService.select(message.getKeyboardId()));
+        if (message.getKeyboardId() != null && this.keyboardMarkUpService.select(message.getKeyboardId()) != null) {
+            if (this.keyboardMarkUpService.select(message.getKeyboardId()) != null) {
+                sendMessage.setReplyMarkup(this.keyboardMarkUpService.select(message.getKeyboardId()));
+            }
         } else {
-            if (keyboardMarkUpService.select(0) != null)
-                sendMessage.setReplyMarkup(keyboardMarkUpService.select(message.getKeyboardId()));
+            if (this.keyboardMarkUpService.select(0) != null) {
+                sendMessage.setReplyMarkup(this.keyboardMarkUpService.select(message.getKeyboardId()));
+            }
         }
         boolean isCaption = false;
         if (photo != null) {
@@ -124,8 +122,9 @@ public class BotUtil {
         return sendMessageWithKeyboard(text, keyboard, chatId, 0);
     }
 
-    private int sendMessageWithKeyboard(String text, ReplyKeyboard keyboard, long chatId, int replyMessageId) throws TelegramApiException {
-        SendMessage sendMessage = new SendMessage();
+    private int sendMessageWithKeyboard(String text, ReplyKeyboard keyboard, long chatId, int replyMessageId)
+            throws TelegramApiException {
+        var sendMessage = new SendMessage();
         sendMessage.setParseMode(ParseMode.HTML.name());
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(text);
@@ -134,14 +133,14 @@ public class BotUtil {
         return sendMessage(sendMessage);
     }
 
-    public int sendContact(long chatId, Contact contact) throws TelegramApiException {
-        SendContact sendContact = new SendContact();
+    public void sendContact(long chatId, Contact contact) throws TelegramApiException {
+        var sendContact = new SendContact();
         sendContact.setChatId(String.valueOf(chatId));
         sendContact.setFirstName(contact.getFirstName());
         sendContact.setLastName(contact.getLastName());
         sendContact.setPhoneNumber(contact.getPhoneNumber());
 
-        return bot.execute(sendContact).getMessageId();
+        bot.execute(sendContact).getMessageId();
     }
 
     public void deleteMessage(long chatId, int messageId) {
@@ -151,13 +150,14 @@ public class BotUtil {
         }
     }
 
-    public boolean hasContactOwner(Update update) {
-        return (update.hasMessage() && update.getMessage().hasContact()) && Objects.equals(update.getMessage().getFrom().getId(), update.getMessage().getContact().getUserId());
+    public boolean hasContactOwner(final Update update) {
+        return (update.hasMessage() && update.getMessage().hasContact()) &&
+                Objects.equals(update.getMessage().getFrom().getId(), update.getMessage().getContact().getUserId());
     }
 
     private Language getLanguage() {
         if (chatId == 0) return Language.RU;
-        return LanguageService.getLanguage(chatId);
+        return this.languageService.getLanguage(chatId);
     }
 
 }

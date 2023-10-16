@@ -16,9 +16,12 @@ import com.halykmarket.merchant.telegabot.util.UpdateUtil;
 import com.itextpdf.text.DocumentException;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.SchedulerException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendAudio;
@@ -38,9 +41,19 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
+@Component
 @NoArgsConstructor
 public abstract class Command {
 
+    protected MessageRepo messageRepo;
+    protected LanguageService languageService;
+    protected BotUtil botUtil;
+    protected KeyboardMarkUpService keyboardMarkUpService;
+    protected UsersRepo usersRepo;
+    protected ButtonRepo buttonRepo;
+    protected AdminRepo adminRepo;
+    protected ComeTimeRepo comeTimeRepo;
+    protected OutTimeRepo outTimeRepo;
     @Getter
     @Setter
     protected long id;
@@ -49,11 +62,9 @@ public abstract class Command {
     @Getter
     @Setter
     protected long messageId;
-    protected String markChange;
     protected int updateMessageId;
     protected DefaultAbsSender bot;
     protected int lastSentMessageID;
-    protected static BotUtil botUtils;
     protected String updateMessageText;
     protected String updateMessagePhoto;
     protected String updateMessagePhone;
@@ -61,24 +72,26 @@ public abstract class Command {
     protected String updateMessageDocument;
     protected WaitingType waitingType = WaitingType.START;
     protected String editableTextOfMessage;
-    protected final static String linkEdit = "/linkId";
     protected static final String next = "\n";
     protected static final String space = " ";
     protected final static boolean EXIT = true;
     protected final static boolean COMEBACK = false;
     protected Message updateMessage;
 
+    @Autowired
+    protected Command(MessageRepo messageRepo, LanguageService languageService, KeyboardMarkUpService keyboardMarkUpService,
+                      BotUtil botUtil, UsersRepo usersRepo, ButtonRepo buttonRepo, AdminRepo adminRepo, ComeTimeRepo comeTimeRepo, OutTimeRepo outTimeRepo) {
+        this.messageRepo = messageRepo;
+        this.languageService = languageService;
+        this.keyboardMarkUpService = keyboardMarkUpService;
+        this.botUtil = botUtil;
+        this.usersRepo = usersRepo;
+        this.buttonRepo = buttonRepo;
+        this.adminRepo = adminRepo;
+        this.comeTimeRepo = comeTimeRepo;
+        this.outTimeRepo = outTimeRepo;
+    }
 
-    protected KeyboardMarkUpService keyboardMarkUpService = new KeyboardMarkUpService();
-    protected UsersRepo usersRepo = TelegramBotRepositoryProvider.getUsersRepo();
-    protected MessageRepo messageRepo = TelegramBotRepositoryProvider.getMessageRepo();
-    protected ButtonRepo buttonRepo = TelegramBotRepositoryProvider.getButtonRepo();
-    protected AdminRepo adminRepo = TelegramBotRepositoryProvider.getAdminRepo();
-    protected KeyboardRepo keyboardRepo = TelegramBotRepositoryProvider.getKeyboardRepo();
-    protected PropertiesRepo propertiesRepo = TelegramBotRepositoryProvider.getPropertiesRepo();
-    protected LanguageUserRepo languageUserRepo = TelegramBotRepositoryProvider.getLanguageUserRepo();
-    protected ComeTimeRepo comeTimeRepo = TelegramBotRepositoryProvider.getComeTimeRepo();
-    protected OutTimeRepo outTimeRepo = TelegramBotRepositoryProvider.getOutTimeRepo();
 //    protected ReminderRepo reminderRepo = TelegramBotRepositoryProvider.getReminderRepo();
 
 
@@ -88,13 +101,9 @@ public abstract class Command {
 
     public abstract boolean execute() throws TelegramApiException, IOException, SQLException, FileNotFoundException, MessageNotFoundException, KeyboardNotFoundException, ButtonNotFoundException, CommandNotFoundException, DocumentException, SchedulerException;
 
-    protected void editMessage(String text, int messageId) throws TelegramApiException {
-        botUtils.editMessage(text, chatId, messageId);
-    }
-
     protected Language getLanguage() {
         if (chatId == 0) return Language.RU;
-        return LanguageService.getLanguage(chatId);
+        return this.languageService.getLanguage(chatId);
     }
 
     protected int getLangId() {
@@ -148,7 +157,7 @@ public abstract class Command {
     }
 
     protected int sendMessage(long messageId, long chatId, Contact contact, String photo) throws TelegramApiException {
-        lastSentMessageID = botUtils.sendMessage(messageId, chatId, contact, photo);
+        lastSentMessageID = this.botUtil.sendMessage(messageId, chatId, contact, photo);
         return lastSentMessageID;
     }
 
@@ -161,9 +170,9 @@ public abstract class Command {
     }
 
     protected int sendMessage(String text, long chatId, Contact contact) throws TelegramApiException {
-        lastSentMessageID = botUtils.sendMessage(text, chatId);
+        lastSentMessageID = this.botUtil.sendMessage(text, chatId);
         if (contact != null) {
-            botUtils.sendContact(chatId, contact);
+            this.botUtil.sendContact(chatId, contact);
         }
         return lastSentMessageID;
     }
@@ -179,15 +188,14 @@ public abstract class Command {
 
     protected void deleteMessage(long chatId, int messageId) {
         if (messageId != 0)
-            botUtils.deleteMessage(chatId, messageId);
+            this.botUtil.deleteMessage(chatId, messageId);
     }
 
     protected String getText(int messageIdFromBD) {
-        return messageRepo.findByIdAndLanguageId(messageIdFromBD, getLanguage().getId()).getName();
-    }
-
-    protected Optional<String> getTextOptional(int messageIdFromDb) {
-        return messageRepo.getName(messageIdFromDb, getLanguage().getId());
+        return messageRepo.findByIdAndLanguageId(messageIdFromBD, getLanguage().getId())
+                .orElseThrow(() -> new MessageNotFoundException("Message with id: " + messageIdFromBD +
+                        " and languageId: " + getLanguage().getId() + " not found"))
+                .getName();
     }
 
     public void clear() {
@@ -196,12 +204,12 @@ public abstract class Command {
     }
 
     protected boolean isButton(int buttonId) {
-        Button button = buttonRepo.findByIdAndLangId(buttonId, getLanguage().getId());
+        Button button = buttonRepo.findByIdAndLangId(buttonId, getLanguage().getId())
+                .orElseThrow();
         return updateMessageText.equals(button.getName());
     }
 
     public boolean isInitNormal(Update update, DefaultAbsSender bot) {
-        if (botUtils == null) botUtils = new BotUtil(bot);
         this.update = update;
         this.bot = bot;
         chatId = UpdateUtil.getChatId(update);
@@ -221,14 +229,16 @@ public abstract class Command {
             } else {
                 updateMessagePhoto = null;
             }
-            if (updateMessage.hasDocument()){
+            if (updateMessage.hasDocument()) {
                 updateMessageDocument = updateMessage.getDocument().getFileId();
             }
             if (updateMessage.hasVideo()) {
                 updateMessageVideo = updateMessage.getVideo().getFileId();
             }
         }
-        if (hasContact()) updateMessagePhone = update.getMessage().getContact().getPhoneNumber();
+        if (hasContact()) {
+            updateMessagePhone = update.getMessage().getContact().getPhoneNumber();
+        }
 //        if (markChange == null) markChange      = getText(Const.EDIT_BUTTON_ICON);
         return COMEBACK;
     }
@@ -242,7 +252,10 @@ public abstract class Command {
     protected void sendMessageWithAddition() throws TelegramApiException {
         deleteMessage(updateMessageId);
         int languageId = getLanguage().getId();
-        com.halykmarket.merchant.telegabot.model.standart.Message message = messageRepo.findByIdAndLanguageId((int) messageId, languageId);
+        com.halykmarket.merchant.telegabot.model.standart.Message message =
+                messageRepo.findByIdAndLanguageId((int) messageId, languageId)
+                        .orElseThrow(() -> new MessageNotFoundException("Message with id: " + messageId +
+                                " and languageId: " + getLanguage().getId() + " not found"));
         try {
             if (message.getFile() != null || message.getFileType() != null) {
                 switch (message.getFileType()) {
@@ -318,14 +331,12 @@ public abstract class Command {
         return String.format("<a href = \"tg://user?id=%s\">%s</a>", chatId, userName);
     }
 
-    protected int toDeleteMessage(int messageDeleteId) {
+    protected void toDeleteMessage(int messageDeleteId) {
         SetDeleteMessages.addKeyboard(chatId, messageDeleteId);
-        return messageDeleteId;
     }
 
-    protected int toDeleteKeyboard(int messageDeleteId) {
+    protected void toDeleteKeyboard(int messageDeleteId) {
         SetDeleteMessages.addKeyboard(chatId, messageDeleteId);
-        return messageDeleteId;
     }
 
     protected int sendMessageWithKeyboard(int messageId, ReplyKeyboard keyboard) throws TelegramApiException {
@@ -336,13 +347,14 @@ public abstract class Command {
         return sendMessageWithKeyboard(text, keyboardMarkUpService.select(keyboardId));
     }
 
-    protected int sendMessageWithKeyboard(String text, ReplyKeyboard keyboard) throws TelegramApiException {
+    protected int sendMessageWithKeyboard(String text, final ReplyKeyboard keyboard)
+            throws TelegramApiException {
         lastSentMessageID = sendMessageWithKeyboard(text, keyboard, chatId);
         return lastSentMessageID;
     }
 
     protected int sendMessageWithKeyboard(String text, ReplyKeyboard keyboard, long chatId) throws TelegramApiException {
-        return botUtils.sendMessageWithKeyboard(text, keyboard, chatId);
+        return this.botUtil.sendMessageWithKeyboard(text, keyboard, chatId);
     }
 
     protected boolean isExist(String buttonName) {

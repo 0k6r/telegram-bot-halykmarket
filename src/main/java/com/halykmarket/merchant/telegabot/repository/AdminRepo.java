@@ -1,13 +1,10 @@
 package com.halykmarket.merchant.telegabot.repository;
 
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
 import com.halykmarket.merchant.telegabot.model.standart.Admin;
-
-import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AdminRepo extends CrudRepository<Admin, Integer> {
+public interface AdminRepo extends JpaRepository<Admin, Integer> {
     int countByChatId(long chatId);
-    List<Admin> findAll();
 }

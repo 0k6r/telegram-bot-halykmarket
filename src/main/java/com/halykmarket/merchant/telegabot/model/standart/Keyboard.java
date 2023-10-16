@@ -1,8 +1,7 @@
 package com.halykmarket.merchant.telegabot.model.standart;
 
+import jakarta.persistence.*;
 import lombok.Data;
-
-import javax.persistence.*;
 
 @Entity
 @Data
@@ -13,10 +12,10 @@ public class Keyboard {
     private Integer id;
 
     @Column(length = 4096)
-    private String  buttonIds;
+    private String buttonIds;
 
     private boolean inline;
 
     @Column(length = 4096)
-    private String  comment;
+    private String comment;
 }

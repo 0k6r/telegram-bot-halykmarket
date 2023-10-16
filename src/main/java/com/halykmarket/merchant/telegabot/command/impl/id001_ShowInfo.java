@@ -2,6 +2,7 @@ package com.halykmarket.merchant.telegabot.command.impl;
 
 import com.halykmarket.merchant.telegabot.command.Command;
 import com.halykmarket.merchant.telegabot.enums.WaitingType;
+import com.halykmarket.merchant.telegabot.exceptions.UserNotFoundException;
 import com.halykmarket.merchant.telegabot.model.standart.ComeTime;
 import com.halykmarket.merchant.telegabot.model.standart.OutTime;
 import com.halykmarket.merchant.telegabot.model.standart.User;
@@ -16,8 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class id001_ShowInfo extends Command {
-
-    private final ComeAndOutService comeAndOutService= new ComeAndOutService();
+    private final ComeAndOutService comeAndOutService = new ComeAndOutService();
     private final ComeTime comeTime = new ComeTime();
     private final OutTime outTime = new OutTime();
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -25,14 +25,16 @@ public class id001_ShowInfo extends Command {
 
     @Override
     public boolean execute() throws TelegramApiException {
-        User user = usersRepo.findByChatId(chatId);
+        User user = usersRepo.findFirstByChatId(chatId)
+                .orElseThrow(() -> new UserNotFoundException("User with chatId: " + chatId +
+                        " not found"));
         deleteMessage(updateMessageId);
-        switch (waitingType){
+        switch (waitingType) {
             case START:
-                if (!isRegistered()){
+                if (!isRegistered()) {
                     super.sendMessage("Вы не зарегистрированы, зарегистрируйтесь пожалуйста нажав на кнопку -> /start");
                 }
-                if(isButton(15)) {
+                if (isButton(15)) {
                     var comeTimeList = comeTimeRepo.findComeTimeInDateRangeAndByUserId(LocalDate.now(),
                             LocalDate.now(), user.getId());
                     if (comeTimeList.isEmpty()) {
@@ -42,8 +44,8 @@ public class id001_ShowInfo extends Command {
                         comeTimeRepo.save(comeTime);
                         super.sendMessage("Вы зарегистрировали свое время прихода: " + comeTime.getCreatedTime());
                     } else {
-                        for (ComeTime ct: comeTimeList) {
-                            if (ct.getUser().getId() == user.getId()){
+                        for (ComeTime ct : comeTimeList) {
+                            if (ct.getUser().getId() == user.getId()) {
                                 sendMessage("Вы же уже регистрировали свое время прихода");
                                 break;
                             }
@@ -58,8 +60,8 @@ public class id001_ShowInfo extends Command {
                         outTimeRepo.save(outTime);
                         sendMessage("Вы зарегистрировали свое время ухода: " + outTime.getCreatedTime());
                     } else {
-                        for (OutTime ct: outTimes) {
-                            if (ct.getUser().getId() == user.getId()){
+                        for (OutTime ct : outTimes) {
+                            if (ct.getUser().getId() == user.getId()) {
                                 sendMessage("Вы же уже регистрировали свое время ухода");
                                 break;
                             }
@@ -80,38 +82,37 @@ public class id001_ShowInfo extends Command {
                     List<OutTime> outTimes = outTimeRepo.findComeTimeInDateRangeOrderByDateAsc(startDate, endDate);
                     System.out.println(comeTimeList);
                     comeAndOutService.sendPollService(chatId, bot, comeTimeList, outTimes);
-                }
-                else return COMEBACK;
+                } else return COMEBACK;
                 return COMEBACK;
             case WRITE_COME_DATE:
-               try {
-                   deleteMessage(updateMessageId);
-                   List<ComeTime> comeTimeList = comeTimeRepo.findAll();
-                   for (ComeTime c: comeTimeList) {
-                       if (c.getCreatedDate().equals(dateKeyboard.getDateDate(updateMessageText).toInstant().atZone(ZoneId.systemDefault()).toLocalDate())) {
-                           sendMessage("В этот день вы уже отмечались. Ваше время прихода: " + c.getCreatedDate() + " " + c.getCreatedTime());
-                           return COMEBACK;
-                       }
-                   }
-                   if (dateKeyboard.getDateDate(updateMessageText).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isAfter(LocalDate.now())){
-                       sendMessage("Время будущей даты нельзя кастомно ввести, попробуйте еще раз");
-                       sendStartDate();
-                       waitingType = WaitingType.WRITE_COME_DATE;
-                       return COMEBACK;
-                   }
-                   if (dateKeyboard.isNext(updateMessageText)) {
-                       sendStartDate();
-                       return COMEBACK;
-                   }
-                   comeTime.setUser(user);
-                   comeTime.setCreatedDate(dateKeyboard.getDateDate(updateMessageText).toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-                   sendMessage("Напишите во сколько вы пришли? (в формате HH:mm)");
-                   waitingType = WaitingType.WRITE_COME_TIME;
-               } catch (Exception e) {
-                   sendMessage("Вы не правильно ввели дату, попробуйте еще раз");
-                   System.out.println("Произошла ошибка. Класс ошибки: " + e.getClass().getName());
-                   waitingType = WaitingType.WRITE_COME_DATE;
-               }
+                try {
+                    deleteMessage(updateMessageId);
+                    List<ComeTime> comeTimeList = comeTimeRepo.findAll();
+                    for (ComeTime c : comeTimeList) {
+                        if (c.getCreatedDate().equals(dateKeyboard.getDateDate(updateMessageText).toInstant().atZone(ZoneId.systemDefault()).toLocalDate())) {
+                            sendMessage("В этот день вы уже отмечались. Ваше время прихода: " + c.getCreatedDate() + " " + c.getCreatedTime());
+                            return COMEBACK;
+                        }
+                    }
+                    if (dateKeyboard.getDateDate(updateMessageText).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isAfter(LocalDate.now())) {
+                        sendMessage("Время будущей даты нельзя кастомно ввести, попробуйте еще раз");
+                        sendStartDate();
+                        waitingType = WaitingType.WRITE_COME_DATE;
+                        return COMEBACK;
+                    }
+                    if (dateKeyboard.isNext(updateMessageText)) {
+                        sendStartDate();
+                        return COMEBACK;
+                    }
+                    comeTime.setUser(user);
+                    comeTime.setCreatedDate(dateKeyboard.getDateDate(updateMessageText).toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                    sendMessage("Напишите во сколько вы пришли? (в формате HH:mm)");
+                    waitingType = WaitingType.WRITE_COME_TIME;
+                } catch (Exception e) {
+                    sendMessage("Вы не правильно ввели дату, попробуйте еще раз");
+                    System.out.println("Произошла ошибка. Класс ошибки: " + e.getClass().getName());
+                    waitingType = WaitingType.WRITE_COME_DATE;
+                }
                 return COMEBACK;
             case WRITE_COME_TIME:
                 deleteMessage(updateMessageId);
@@ -135,13 +136,13 @@ public class id001_ShowInfo extends Command {
                 try {
                     deleteMessage(updateMessageId);
                     List<OutTime> outTimeList = outTimeRepo.findAll();
-                    for (OutTime o: outTimeList) {
+                    for (OutTime o : outTimeList) {
                         if (o.getCreatedDate().isEqual(dateKeyboard.getDateDate(updateMessageText).toInstant().atZone(ZoneId.systemDefault()).toLocalDate())) {
                             sendMessage("В этот день вы уже отмечались. Ваше время ухода: " + o.getCreatedDate() + " " + o.getCreatedTime());
                             return COMEBACK;
                         }
                     }
-                    if (dateKeyboard.getDateDate(updateMessageText).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isAfter(LocalDate.now())){
+                    if (dateKeyboard.getDateDate(updateMessageText).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isAfter(LocalDate.now())) {
                         sendMessage("Время будущей даты нельзя кастомно ввести, попробуйте еще раз");
                         sendStartDate();
                         waitingType = WaitingType.WRITE_OUT_DATE;
@@ -175,7 +176,7 @@ public class id001_ShowInfo extends Command {
                         sendMessage("Вы успешно зарегистрировали свое время ухода вручную: " + outTime.getCreatedDate() + " - " + outTime.getCreatedTime());
                         return COMEBACK;
                     }
-                }catch (Exception e) {
+                } catch (Exception e) {
                     giveErrorTimeMessage(e);
                     waitingType = WaitingType.WRITE_COME_TIME;
                     return COMEBACK;
@@ -189,8 +190,8 @@ public class id001_ShowInfo extends Command {
         System.out.println("Произошла ошибка. Класс ошибки: " + e.getClass().getName());
     }
 
-    private int sendStartDate() throws TelegramApiException {
-        return toDeleteKeyboard(sendMessageWithKeyboard("Выберите дату", dateKeyboard.getCalendarKeyboard()));
+    private void sendStartDate() throws TelegramApiException {
+        toDeleteKeyboard(sendMessageWithKeyboard("Выберите дату", dateKeyboard.getCalendarKeyboard()));
     }
 
 }

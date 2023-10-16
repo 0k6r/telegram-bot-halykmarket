@@ -1,13 +1,11 @@
 package com.halykmarket.merchant.telegabot.model.standart;
 
+import jakarta.persistence.*;
 import lombok.Data;
-
-import javax.persistence.*;
 
 @Entity
 @Data
 public class Properties {
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;

@@ -14,9 +14,9 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @SpringBootApplication
 @Slf4j
-public class HMtelegaBotApplication implements CommandLineRunner {
+public class TelegramBotApplication implements CommandLineRunner {
 
-    public static void main(String[] args)  {
+    public static void main(String[] args) {
         try {
             // Запуск планировщика
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
@@ -29,15 +29,16 @@ public class HMtelegaBotApplication implements CommandLineRunner {
 
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withIdentity("notificationTrigger", "group1")
-                    .withSchedule(CronScheduleBuilder.cronSchedule("0 0 10 ? * MON-FRI")) // Каждый день в 10:00 утра, пн-пт
+                    // Каждый день в 10:00 утра, пн-пт
+                    .withSchedule(CronScheduleBuilder.cronSchedule("0 0 10 ? * MON-FRI"))
                     .build();
 
             // Запустите задачу
             scheduler.scheduleJob(job, trigger);
 
             // Создайте и запустите отдельный поток для Spring Boot приложения
-            Thread springBootThread = new Thread(() -> {
-                SpringApplication.run(HMtelegaBotApplication.class, args);
+            var springBootThread = new Thread(() -> {
+                SpringApplication.run(TelegramBotApplication.class, args);
             });
             springBootThread.start();
 
@@ -47,6 +48,7 @@ public class HMtelegaBotApplication implements CommandLineRunner {
             e.printStackTrace();
         }
     }
+
 
     @Override
     public void run(String... args) throws Exception {

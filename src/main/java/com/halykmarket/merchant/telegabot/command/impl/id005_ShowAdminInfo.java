@@ -1,5 +1,7 @@
 package com.halykmarket.merchant.telegabot.command.impl;
 
+import com.halykmarket.merchant.telegabot.exceptions.MessageNotFoundException;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendAudio;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
@@ -10,7 +12,8 @@ import com.halykmarket.merchant.telegabot.command.Command;
 import com.halykmarket.merchant.telegabot.model.standart.Message;
 import com.halykmarket.merchant.telegabot.util.Const;
 
-public class id05_ShowAdminInfo extends Command {
+@Component
+public class id005_ShowAdminInfo extends Command {
 
     @Override
     public boolean execute() throws TelegramApiException {
@@ -19,7 +22,9 @@ public class id05_ShowAdminInfo extends Command {
             return EXIT;
         }
         deleteMessage(updateMessageId);
-        Message message = messageRepo.findByIdAndLanguageId((int)messageId, getLanguage().getId());
+        Message message = messageRepo.findByIdAndLanguageId((int)messageId, getLanguage().getId())
+                .orElseThrow(() -> new MessageNotFoundException("Message with id: " + messageId +
+                        " and languageId: " + getLanguage().getId() + " not found"));
         sendMessage(messageId, chatId, null, message.getPhoto());
         if (message.getFile() != null) {
             switch (message.getFileType()) {
