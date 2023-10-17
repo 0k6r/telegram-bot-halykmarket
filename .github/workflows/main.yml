@@ -85,4 +85,4 @@ jobs:
             docker run -d \
             --restart always \
             --name ${{ env.CONTAINER_NAME }} \
-            ${{ env.REGISTRY }}/${{ jobs.build_and_push_image.steps.meta.outputs.tags }} | head -c7
+            ${{ env.REGISTRY }}/${{ needs.build_and_push_image.steps.meta.outputs.tags }} | head -c7
