@@ -84,7 +84,7 @@ jobs:
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}  ${{ env.REGISTRY }}
             docker stop $(echo $IMAGE_NAME)
             docker rm $(echo $IMAGE_NAME)
-            echo $(echo $REGISTRY)/$(echo $IMAGE_NAME):${{ needs.build_and_push_image.outputs.IMAGE_VERSION }} \
+            echo "Name: $(echo $REGISTRY)/$(echo $IMAGE_NAME):${{ needs.build_and_push_image.outputs.IMAGE_VERSION }}" \
             docker run -d \
             --restart always \
             --name $(echo $IMAGE_NAME) \
