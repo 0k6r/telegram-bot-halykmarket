@@ -20,7 +20,7 @@ public class id002_Registration extends Command {
         sendMessage(Const.WELCOME_MESSAGE, chatId);
 //        sendMessageWithKeyboard(getText(5), 3);
         if (!isRegistered()) {
-            if (!registrationService.isRegistration(update, botUtils)) {
+            if (!registrationService.isRegistration(update, botUtil)) {
                 User user = registrationService.getUser();
                 usersRepo.save(user);
 
