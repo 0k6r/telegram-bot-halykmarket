@@ -85,5 +85,5 @@ jobs:
             docker rm $(echo $IMAGE_NAME)
             docker run -d \
             --restart always \
-            --name $(echo ${{ needs.build_and_push_image.outputs.CONTAINER_TITLE }}) \
-            $(echo ${{ needs.build_and_push_image.outputs.IMAGE_PATH }})
+            --name telegram_bot \
+            ${{ needs.build_and_push_image.outputs.IMAGE_PATH }}
