@@ -80,8 +80,8 @@ jobs:
           envs: IMAGE_NAME,REGISTRY,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
           script: |
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}  ${{ env.REGISTRY }}
-            docker stop ${{ env.$IMAGE_NAME }}
-            docker rm ${{ env.$IMAGE_NAME }}
+            docker stop ${{ env.IMAGE_NAME }}
+            docker rm ${{ env.IMAGE_NAME }}
             docker run -d \
             --restart always \
             --name ${{ env.CONTAINER_NAME }} \
