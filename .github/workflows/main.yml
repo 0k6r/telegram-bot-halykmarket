@@ -17,6 +17,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  CONTAINER_NAME: telegram_bot
 
 jobs:
   build_and_push_image:
@@ -27,7 +28,7 @@ jobs:
       matrix:
         platform:
           - linux/amd64
-          -
+
     permissions:
       contents: read
       packages: write
@@ -79,9 +80,9 @@ jobs:
           envs: IMAGE_NAME,REGISTRY,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
           script: |
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}  ${{ env.REGISTRY }}
-            docker stop $(echo $IMAGE_NAME)
-            docker rm $(echo $IMAGE_NAME)
+            docker stop ${{ env.CONTAINER_NAME }}
+            docker rm ${{ env.CONTAINER_NAME }}
             docker run -d \
             --restart always \
-            --name $(echo $IMAGE_NAME) \
+            --name ${{ env.CONTAINER_NAME }} \
             $(echo $REGISTRY)/$(echo $IMAGE_NAME):master | head -c7
