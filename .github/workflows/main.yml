@@ -59,14 +59,9 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-<<<<<<< HEAD
-=======
-          context: ../../
->>>>>>> 0812c46 (Fix path to dockerfile)
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          dockerfile: ./Dockerfile
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs }}
