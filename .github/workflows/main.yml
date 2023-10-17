@@ -77,7 +77,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          envs: IMAGE_NAME,REGISTRY,GITHUB_SHA
+          envs: IMAGE_NAME,REGISTRY,GITHUB_SHA,{{ needs.build_and_push_image.steps.meta.outputs.tags }}
           script: |
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}  ${{ env.REGISTRY }}
             docker stop $(echo $IMAGE_NAME)
@@ -85,4 +85,4 @@ jobs:
             docker run -d \
             --restart always \
             --name $(echo $IMAGE_NAME) \
-            $(echo $REGISTRY)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
+            $(echo $REGISTRY)/$(echo $IMAGE_NAME):${{ needs.build_and_push_image.steps.meta.outputs.tags }}
