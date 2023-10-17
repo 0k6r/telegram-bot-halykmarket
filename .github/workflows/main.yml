@@ -80,9 +80,9 @@ jobs:
           envs: IMAGE_NAME,REGISTRY,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
           script: |
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}  ${{ env.REGISTRY }}
-            docker stop ${{ env.CONTAINER_NAME }}
-            docker rm ${{ env.CONTAINER_NAME }}
+            docker stop ${{ env.$IMAGE_NAME }}
+            docker rm ${{ env.$IMAGE_NAME }}
             docker run -d \
             --restart always \
             --name ${{ env.CONTAINER_NAME }} \
-            $(echo $REGISTRY)/$(echo $IMAGE_NAME):master | head -c7
+            ${{ env.REGISTRY }}/${{ jobs.build_and_push_image.steps.meta.outputs.tags }} | head -c7
