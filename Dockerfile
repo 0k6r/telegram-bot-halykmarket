@@ -1,11 +1,11 @@
-FROM eclipse-temurin:17-jdk-alpine AS builder
+FROM maven:3.9.3-eclipse-temurin-17-alpine AS builder
 LABEL authors="oku6er"
 WORKDIR build
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
-RUN ./mvnw install -DskipTests
+RUN mvn install -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine AS layers
 LABEL authors="oku6er"
