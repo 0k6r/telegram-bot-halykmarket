@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       IMAGE_PATH: ${{ steps.meta.outputs.tags }}
-      CONTAINER_TITLE: ${{ steps.meta.outputs.labels.title }}
+      CONTAINER_TITLE: telegram_bot
 
     strategy:
       fail-fast: false
@@ -85,5 +85,5 @@ jobs:
             docker rm $(echo $IMAGE_NAME)
             docker run -d \
               --restart always \
-              --name ${{ needs.build_and_push_image.outputs.CONTAINER_TITLE }} \
+              --name $(echo $CONTAINER_TITLE) \
               ${{ needs.build_and_push_image.outputs.IMAGE_PATH }}
