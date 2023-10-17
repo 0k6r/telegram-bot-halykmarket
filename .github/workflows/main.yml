@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       IMAGE_PATH: ${{ steps.meta.outputs.tags }}
+      CONTAINER_TITLE: ${{ steps.meta.outputs.labels.title }}
 
     strategy:
       fail-fast: false
@@ -77,12 +78,12 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          envs: IMAGE_NAME,REGISTRY,GITHUB_SHA,{{ needs.build_and_push_image.steps.meta.outputs.tags }}
+          envs: IMAGE_NAME,REGISTRY,GITHUB_SHA
           script: |
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}  ${{ env.REGISTRY }}
             docker stop $(echo $IMAGE_NAME)
             docker rm $(echo $IMAGE_NAME)
             docker run -d \
               --restart always \
-              --name $(echo $IMAGE_NAME) \
+              --name ${{ needs.build_and_push_image.outputs.CONTAINER_TITLE }} \
               ${{ needs.build_and_push_image.outputs.IMAGE_PATH }}
