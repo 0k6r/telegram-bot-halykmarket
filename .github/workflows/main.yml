@@ -84,5 +84,5 @@ jobs:
             docker rm ${{ env.IMAGE_NAME }}
             docker run -d \
             --restart always \
-            --name ${{ env.CONTAINER_NAME }} \
+            --name ${{ env.IMAGE_NAME }} \
             ${{ env.REGISTRY }}/${{ needs.build_and_push_image.steps.meta.outputs.tags }} | head -c7
