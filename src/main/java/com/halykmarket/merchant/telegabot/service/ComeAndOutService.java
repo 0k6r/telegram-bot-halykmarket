@@ -182,7 +182,10 @@ public class ComeAndOutService {
         path += fileName;
         File dir = new File("/home/meruert/Desktop/projects");
         if (!dir.exists()) {
-            dir.mkdir();
+            boolean mkdir = dir.mkdir();
+            if (!mkdir) {
+                log.error("Cannot create dir with path:" + dir.getPath());
+            }
         }
         try (FileOutputStream stream = new FileOutputStream(path)) {
             workbook.write(stream);

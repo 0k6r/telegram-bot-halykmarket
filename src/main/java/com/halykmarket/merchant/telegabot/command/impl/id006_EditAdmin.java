@@ -80,15 +80,14 @@ public class id006_EditAdmin extends Command {
                         text.append(getInfoByUser(user)).append(space).append(next);
                     }
                     text.append(getText(Const.WARNING_INFO_ABOUT_ADMIN)).append(next);
-                    count++;
                 } else {
                     if (withLink) {
                         text.append(delete).append(count).append(deleteIcon).append(" - ").append(showIcon).append(getLinkForUser(user.getChatId(), user.getUsername())).append(space).append(next);
                     } else {
                         text.append(delete).append(count).append(deleteIcon).append(" - ").append(getInfoByUser(user)).append(space).append(next);
                     }
-                    count++;
                 }
+                count++;
             } catch (Exception e) {
                 e.printStackTrace();
             }
