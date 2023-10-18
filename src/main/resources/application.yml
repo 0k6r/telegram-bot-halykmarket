@@ -1,9 +1,12 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/telegramBot
-    username: postgres
-    password: root
+    url: jdbc:postgresql://${DATABASE_URL:localhost:5432}/${DATABASE_TABLE:telegram_bot}
+    username: ${DATABASE_USER:telegram_bot_user}
+    password: ${DATABASE_PASSWORD:telegram_bot_user_password}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
+  flyway:
+    user: ${DATABASE_FLYWAY_USER:flyway}
+    password: ${DATABASE_FLYWAY_PASSWORD:flyway}
