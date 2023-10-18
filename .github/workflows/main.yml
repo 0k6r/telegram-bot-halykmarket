@@ -63,6 +63,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DATABASE_TABLE=${{ secrets.DATABASE_TABLE }}
+            DATABASE_USER=${{ secrets.DATABASE_USER }}
+            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+            DATABASE_FLYWAY_PASSWORD=${{ secrets.DATABASE_FLYWAY_PASSWORD }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs }}
@@ -84,11 +90,7 @@ jobs:
             docker stop $(echo $IMAGE_NAME)
             docker rm $(echo $IMAGE_NAME)
             docker run -d \
+            -p 8080:8080 \
             --restart always \
             --name telegram_bot \
-            --env DATABASE_URL=${{ secrets.DATABASE_URL }} \
-            DATABASE_TABLE=${{ secrets.DATABASE_TABLE }} \
-            DATABASE_USER=${{ secrets.DATABASE_USER }} \
-            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
-            DATABASE_FLYWAY_PASSWORD=${{ secrets.DATABASE_FLYWAY_PASSWORD }} \
             ${{ needs.build_and_push_image.outputs.IMAGE_PATH }}
