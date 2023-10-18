@@ -5,7 +5,7 @@ COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
-RUN mvn install -DskipTests
+RUN mvn clean install -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine AS layers
 LABEL authors="oku6er"

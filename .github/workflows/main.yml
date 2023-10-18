@@ -63,12 +63,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            DATABASE_TABLE=${{ secrets.DATABASE_TABLE }}
-            DATABASE_USER=${{ secrets.DATABASE_USER }}
-            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
-            DATABASE_FLYWAY_PASSWORD=${{ secrets.DATABASE_FLYWAY_PASSWORD }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs }}
@@ -91,6 +85,11 @@ jobs:
             docker rm $(echo $CONTAINER_NAME)
             docker run -d \
             --network="host" \
+            -e "DATABASE_URL=${{ secrets.DATABASE_URL }}" \
+            -e "DATABASE_TABLE=${{ secrets.DATABASE_TABLE }}" \
+            -e "DATABASE_USER=${{ secrets.DATABASE_USER }}" \
+            -e "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" \
+            -e "DATABASE_FLYWAY_PASSWORD=${{ secrets.DATABASE_FLYWAY_PASSWORD }}" \
             --restart always \
             --name $(echo $CONTAINER_NAME) \
             ${{ needs.build_and_push_image.outputs.IMAGE_PATH }}
