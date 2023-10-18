@@ -84,7 +84,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          envs: IMAGE_NAME,REGISTRY,GITHUB_SHA,${{ needs.build_and_push_image.outputs.IMAGE_PATH }}
+          envs: REGISTRY,GITHUB_SHA,CONTAINER_NAME
           script: |
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}  ${{ env.REGISTRY }}
             docker stop $(echo $CONTAINER_NAME)
@@ -92,5 +92,5 @@ jobs:
             docker run -d \
             -p 8080:8080 \
             --restart always \
-            --name telegram_bot \
+            --name $(echo $CONTAINER_NAME) \
             ${{ needs.build_and_push_image.outputs.IMAGE_PATH }}
