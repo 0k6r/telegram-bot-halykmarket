@@ -90,6 +90,7 @@ jobs:
             docker stop $(echo $CONTAINER_NAME)
             docker rm $(echo $CONTAINER_NAME)
             docker run -d \
+            --network="host" \
             -p 8080:8080 \
             --restart always \
             --name $(echo $CONTAINER_NAME) \
