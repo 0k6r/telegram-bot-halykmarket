@@ -23,4 +23,4 @@ RUN ./mvnw spring-boot:run -DskipTests
 #RUN chown -R appuser:appuser /opt/app
 #USER appuser
 #HEALTHCHECK --interval=30s --retries=5 CMD wget -qO- http://localhost:8080/actuator/health/ | grep UP || exit 1
-ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
+#ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
